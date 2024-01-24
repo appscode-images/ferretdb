@@ -79,7 +79,7 @@ COPY --from=production-build /src/bin/ferretdb /ferretdb
 
 # final stage
 
-FROM scratch AS production
+FROM debian:bookworm AS production
 
 COPY --from=production-build /src/bin/ferretdb /ferretdb
 
@@ -88,6 +88,11 @@ ENTRYPOINT [ "/ferretdb" ]
 WORKDIR /
 VOLUME /state
 EXPOSE 27017 27018 8080
+
+RUN groupadd -g 1000 ferretdb
+RUN useradd -ms /bin/bash -u 1000 -g ferretdb ferretdb
+RUN mkdir /state && chown -R ferretdb:ferretdb /state
+USER 1000
 
 # don't forget to update documentation if you change defaults
 ENV FERRETDB_LISTEN_ADDR=:27017
