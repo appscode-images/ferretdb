@@ -99,16 +99,26 @@ COPY --from=production-build /src/bin/ferretdb /ferretdb
 
 # final stage
 
-FROM scratch AS production
+# Use BusyBox (includes /bin/sh for debugging)
+FROM busybox AS production
 
+# Copy user and group information
 COPY build/ferretdb/passwd /etc/passwd
 COPY build/ferretdb/group  /etc/group
+
+# Create /state with correct permissions for OpenShift compatibility
+RUN mkdir -p /state \
+    && chown -R 1000:0 /state \
+    && chmod -R g=u /state  # Ensure group permissions match user permissions. This ensures that any arbitrary user OpenShift assigns (which will have GID 0) has the same access as the ferretdb user.
+
+# Set user (UID 1000, GID 1000)
 USER ferretdb:ferretdb
 
-COPY --from=production-build /src/bin/ferretdb /ferretdb
-COPY --from=production-build --chown=ferretdb:ferretdb /state /state
+# Copy application files with the correct ownership
+COPY --from=production-build --chown=1000:0 /src/bin/ferretdb /ferretdb
+COPY --from=production-build --chown=1000:0 /state /state
 
-ENTRYPOINT [ "/ferretdb" ]
+ENTRYPOINT ["/ferretdb"]
 
 HEALTHCHECK --interval=1m --timeout=5s --retries=1 --start-period=30s --start-interval=5s \
   CMD /ferretdb ping
