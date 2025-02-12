@@ -81,18 +81,31 @@ COPY --from=production-build /src/bin/ferretdb /ferretdb
 
 FROM debian:bookworm AS production
 
+# Create the ferretdb group (GID 1000)
+RUN groupadd -g 1000 ferretdb
+
+# Create the ferretdb user (UID 1000) and assign it to group 1000
+RUN useradd -ms /bin/bash -u 1000 -g ferretdb ferretdb
+
+# Create /state directory and set ownership to UID 1000, GID 0
+RUN mkdir -p /state \
+    && chown -R 1000:0 /state \
+    && chmod -R g=u /state  # Allows OpenShift's arbitrary UID to write
+
+# Set the working directory
+WORKDIR /state
+
+# Copy binary
 COPY --from=production-build /src/bin/ferretdb /ferretdb
 
-ENTRYPOINT [ "/ferretdb" ]
-
-WORKDIR /
-VOLUME /state
+# Expose necessary ports
 EXPOSE 27017 27018 8080
 
-RUN groupadd -g 1000 ferretdb
-RUN useradd -ms /bin/bash -u 1000 -g ferretdb ferretdb
-RUN mkdir /state && chown -R ferretdb:ferretdb /state
-USER 1000
+# Run as ferretdb user but with GID 0 for OpenShift compatibility
+USER 1000:0
+
+# Set entrypoint
+ENTRYPOINT ["/ferretdb"]
 
 # don't forget to update documentation if you change defaults
 ENV FERRETDB_LISTEN_ADDR=:27017
