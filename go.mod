@@ -19,7 +19,7 @@ require (
 	github.com/prometheus/common v0.62.0
 	github.com/stretchr/testify v1.10.0
 	github.com/xdg-go/scram v1.1.2
-	go.mongodb.org/mongo-driver v1.17.3
+	go.mongodb.org/mongo-driver v1.17.7
 	go.mongodb.org/mongo-driver/v2 v2.1.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.35.0
